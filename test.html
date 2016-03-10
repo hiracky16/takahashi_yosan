@@ -152,20 +152,36 @@
 
 				var sortbar = function() {
 					sortOrder = !sortOrder;
+					var x0 = x.domain(data.sort(function(a, b){
+						if (sortOrder) {
+							return a[vername] - b[vername];
+						} else {
+							return b[vername] - a[vername];
+						}
+					})
+					.map(function(d) { return d.tag; }))
+					.copy();
+
 					svg.selectAll(".bar")
 						.sort(function(a, b){
 							if (sortOrder) {
-								return a[vername] - b[vername];
+								return x0(a.tag) - x0(b.tag);
 							} else {
-								return b[vername] - a[vername];
+								return x0(b.tag) - x0(a.tag);
 							}
-						})
-						.transition()
-						.delay(function(d, i){
-							return i*50;
-						})
-						.duration(1000)
-						.attr("x", function(d, i){ return i*width/10;});
+						});
+
+					var transition = svg.transition().duration(1000),
+						delay = function(d, i) { return i*50; };
+
+					transition.selectAll(".bar")
+						.delay(delay)
+						.attr("x", function(d) { return x0(d.tag); });
+
+					transition.select(".x.axis")
+						.call(xAxis)
+						.selectAll("g")
+							.delay(delay);
 				}
 
 			svg.selectAll(".button")
@@ -194,6 +210,14 @@
 				 maxvalue = d3.max(data, function(d) { return d[vername]; });
 				 y.domain([0, maxvalue]);
 				 yAxis.scale(y);
+				 svg.select(".bar")
+				 	.transition()
+					.duration(1000)
+
+				 svg.select(".x.axis")
+				 	.transition()
+					.duration(1000)
+					.call(xAxis);
 				 svg.select(".y.axis")
 				 	.transition()
 					.duration(1000)
