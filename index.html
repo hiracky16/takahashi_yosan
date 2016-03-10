@@ -27,16 +27,40 @@
 	svg {
 		width: 100%;
 	}
+
+	.tooltip{
+		position: absolute;
+		width: 200px;
+		height: 30px;
+		pointer-events: none;
+	}
+	
+	.button{
+		fill: white;
+		stroke: black;
+	
+	}	
+
 </style>
 <script src="//d3js.org/d3.v3.min.js"></script>
 <body style='margin:0;padding:0;'>
+<h1>各市町の予算比較</h1>
 <script>
-	var margin = {top: 20, right: 20, bottom: 230, left:40},
-			inputbutton = 50,
-			width = window.innerWidth - margin.left - margin.right,
-			height = 700 - margin.top - margin.bottom - inputbutton;
+	var buttonarea = 200;
+	var margin = {
+		top: 20,
+		right: 20, 
+		bottom: 30, 
+		left:40
+		},
+			width = 1300 - margin.left - margin.right,
+			height = 700 - margin.top - margin.bottom - buttonarea;
 
+	var win = d3.select(window);
 	var vername = "議会費";
+
+	var sortOrder = false;
+
 	var x = d3.scale.ordinal()
 						.rangeRoundBands([0, width], .1);
 	var y = d3.scale.linear()
@@ -56,27 +80,37 @@
 
 	var svg = d3.select("body").append("svg")
 							.attr("width", width + margin.left + margin.right)
-							.attr("height", height + margin.top + margin.bottom)
+							.attr("height", height + margin.top + margin.bottom + buttonarea)
 						.append("g")
-							.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-	d3.csv("data.csv", type, function(error, data){
-		if (error) throw error;
+						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
+	
+	var tooltip = d3.select("body").append("div")
+		.attr("class", "tooltip")
+		.style("opacity", 0);
 
-		var colname = d3.map(data[0]).keys();
-		colname.shift();
+
+	function render(currentname){
+		d3.csv("data.csv", type, function(error, data){
+			if (error) throw error;
+
+			var colname = d3.map(data[0]).keys();
+			colname.shift();
+			
+			vername = currentname;
 		
-		x.domain(data.map(function(d) {return d.tag}));
-		y.domain([0, d3.max(data, function(d) {return d["議会費"];})]);
+			x.domain(data.map(function(d) {return d.tag}));
+			y.domain([0, d3.max(data, function(d) {return d[vername];})]);
 
-		var maxv = d3.max(data, function(d) {return d[vername];});
-		var minv = d3.min(data, function(d) {return d[vername];});
+			var maxv = d3.max(data, function(d) {return d[vername];});
+			var minv = d3.min(data, function(d) {return d[vername];});
 
-		svg.append("g")
+
+			svg.append("g")
 			 .attr("class", "x axis")
 			 .attr("transform", "translate(0," + height + ")")
 			 .call(xAxis);
 
-		svg.append("g")
+			svg.append("g")
 			 	.attr("class", "y axis")
 				.attr("transform", "translate(" + margin + "," + margin + ")")
 			 	.call(yAxis)
@@ -90,7 +124,7 @@
 			 	.style("text-anchor", "end")
 			 	.text(vername+"/人");
 
-		svg.selectAll(".bar")
+			svg.selectAll(".bar")
 			 	.data(data)
 			.enter().append("rect")
 			 	.attr("class", "bar")
@@ -99,25 +133,71 @@
 			 	.attr("y", function(d) { return y(d[vername]);})
 			 	.attr("height", function(d) {return height - y(d[vername]);})
 				.attr("fill", function(d) {
-						console.log(minv);
 						var colval = Math.ceil(d[vername]*255/maxv);
 						colval =  350 - colval;
 						return "rgb(0,0," + colval + ")";
-				});
-/*
-		svg.selectAll("input")
+				})
+				.on("mouseover", function(d){
+					tooltip.transition()
+						.duration(200)
+						.style("opacity", .9);
+					tooltip.html(d[vername] + "円/人")
+						.style("left", (d3.event.pageX + 5) + "px")
+						.style("top", (d3.event.pageY - 30) + "px");
+				})
+				.on("mouseout", function(){
+					tooltip.transition()
+						.duration(500)
+						.style("opacity", 0);
+				})
+				.on("click", function(){ sortbar(); });
+
+				var sortbar = function() {
+					sortOrder = !sortOrder;
+					var x0 = x.domain(data.sort(function(a, b){
+						if (sortOrder) {
+							return a[vername] - b[vername];
+						} else {
+							return b[vername] - a[vername];
+						}
+					})
+					.map(function(d) { return d.tag; }))
+					.copy();
+
+					svg.selectAll(".bar")
+						.sort(function(a, b){
+							if (sortOrder) {
+								return x0(a.tag) - x0(b.tag);
+							} else {
+								return x0(b.tag) - x0(a.tag);
+							}
+						});
+
+					var transition = svg.transition().duration(1000),
+						delay = function(d, i) { return i*50; };
+
+					transition.selectAll(".bar")
+						.delay(delay)
+						.attr("x", function(d) { return x0(d.tag); });
+
+					transition.select(".x.axis")
+						.call(xAxis)
+						.selectAll("g")
+							.delay(delay);
+				}
+
+			svg.selectAll(".button")
 				.data(colname)
-				.enter().append("input")
-				.attr("type", "button")
-				.attr("value", function(d) {return d;})
+				.enter().append("rect")
+				.attr("class", "button")
 				.attr("transform", "translate(0," + (height+20) + ")")
 				.attr("x", function(d, i) {
 						return i * width/colname.length;
 					})
-				.attr("width", 60)
-				.attr("height", 20)
-*/
-		svg.selectAll(".text")
+				.attr("width", width/colname.length)
+				.attr("height", 30);
+
+			svg.selectAll(".text")
 			 .data(colname)
 			 .enter().append("text")
 			 .attr("class", "text")
@@ -127,56 +207,129 @@
 				 })
 			 .attr("font-size", "12px")
 			 .text(function(d){ return d;})
-			 .on("click", function(d){
-				 vername = d;
-				 maxvalue = d3.max(data, function(d) {typead(d, vername); return d[vername];});
-				 y.domain([0, maxvalue]);
-				 yAxis.scale(y);
-				 svg.select(".y.axis")
-				 	.transition()
-					.duration(1000)
-					.attr("transform", "translate(0," + margin + margin + ")")
-					.call(yAxis)
+			 .on("click", function(d){ rerender(d); });
+		});
 
-				svg.select(".vername")
-					.transition()
-					.text(vername+"/人")
-				 svg.selectAll("rect")
-				 	.data(data)
-					.transition()
-					.attr("y", function(d) { return y(d[vername]); })
-					.attr("height", function(d) { return height-y(d[vername]); })
+	}
+
+	function rerender(newname){
+		vername = newname;
+		d3.csv("data.csv", type, function(err, data){
+			if (err) { console.log(err) }
+			
+			var maxv = d3.max(data, function(d) {return d[vername];});
+      y.domain([0, maxv]);
+			yAxis.scale(y);
+			x.domain(data.map(function(d) {return d.tag;}));
+			xAxis.scale(x);
+
+			svg.select(".bar")
+				.transition()
+				.duration(1000);
+
+      svg.select(".x.axis")
+			 .transition()
+			 .duration(1000)
+       .call(xAxis);
+
+      svg.select(".y.axis")
+				.transition()
+				.duration(1000)
+        .call(yAxis);
+
+			svg.select(".vername")
+				.transition()
+        .text(vername+"/äºº");
+
+			console.log(vername);
+
+      svg.selectAll(".bar")
+        .data(data)
+				.transition()
+				.duration(1000)
+        .attr("x", function(d) { return x(d.tag);})
+        .attr("width", x.rangeBand())
+        .attr("y", function(d) { console.log(d[vername]); return y(d[vername]);})
+        .attr("height", function(d) {return height - y(d[vername]);})		
+				.attr("fill", function(d){
+					var colval = Math.ceil(d[vername]*255/maxv);
+					colval = 350 - colval;
+					return "rgb(0,0," + colval + ")";
+
 				});
-	});
+		});
+	}
+
+
+	
+	function update(){
+		var w = window.innerWidth - margin.left - margin.right;
+		console.log(w);
+		x = d3.scale.ordinal().rangeRoundBands([0, w], .1);
+		xAxis = d3.svg.axis()
+			.scale(x);
+
+		svg.attr("width", w);
+		
+		svg.select(".x.axis")
+			.call(xAxis);
+
+
+		var data = d3.csv("data.csv", type, function(err, data){ return data; });
+	
+		/*	
+		svg.selectAll(".bar")
+			.data(data).enter()
+			.attr("x", function(d) { return x(d.tag); })
+			.attr("width", x.rangeBand());
+		*/
+	}
+
+	render(vername);
+	update();
+	win.on("resize", update);
 
 	function type(d, i) {
-		d["議会費"] = +d["議会費"];
+		var tmp = d3.map(d).keys();
+		tmp.shift();
+		for(var i=0; i<tmp.length; i++){ d[tmp[i]] = +d[tmp[i]]; }
 		return d;
 	}
 
-	function typead(d, name){
-		d[name] = +d[name];
-		return d;
+/*
+	var sortbar = function(){
+		sortOrder = !sortOrder;
+		/*
+		var x0 = x.domain(data.sort(function(a, b) {
+			if (sortOrder) {
+				return a[vername] - b[vername];
+			} else {
+				return b[vername] - a[vername];
+			}
+		} function(a, b) { return d3.ascending(a.tag, b.tag); }
+		.map(function(d) {return d.tag}))
+		.copy();
+		svg.select(".bar")
+			.sort(function(a, b){
+				if (sortOrder){
+					return d3.ascending(a[vername], b[vername]);
+				} else {
+					return d3.descending(a[vername], b[vername]);
+				}
+			});
+		
+		svg.selectAll(".bar")
+			.transition()
+		 	.delay(function(d, i){
+				return i*50;
+			})
+			.duration(1000)
+			.attr("x", function(d, i){
+				return x(i);
+			});
 	}
+*/
 	
 
-	function inputdata(d, i){
-		console.log(i);
-		vername = d;
-		console.log(col);
-		y.domain([0, d3.max(data, function(d) {return d[vername]})]);
-	d3.csv("data.csv" , function(err, data){
-		if(err) {console.log(err);}
-		svg = d3.selectAll("rect")
-		.data(data)
-		.transition()
-		.attr("y", function(d) {
-			return y(d[vername]);
-		})
-		.attr("height", function(d){
-			return height - y(d[col]);
-		});
-	});
-}
 
 </script>
