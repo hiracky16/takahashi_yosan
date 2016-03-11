@@ -15,5 +15,5 @@
 
 ##データの引用元
 * [高梁川流域圏自治体_一般会計_予算](http://catalog.dataeye.jp/dataset/33tak000001)
-* [H27の国勢調査の人口速報集計](http://www.stat.go.jp/data/kokusei/2015/kekka.htm)
+* [H27の国勢調査の人口速報集計](http://www.stat.go.jp/data/kokusei/2015/kekka.htm)  
 data.csvは一般予算額を人口で割った値を用いている。
