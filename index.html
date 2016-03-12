@@ -213,6 +213,7 @@
 	}
 
 	function rerender(newname){
+		sortOrder = false;
 		vername = newname;
 		d3.csv("data.csv", type, function(err, data){
 			if (err) { console.log(err) }
