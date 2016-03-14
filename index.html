@@ -34,12 +34,12 @@
 		height: 30px;
 		pointer-events: none;
 	}
-	
+
 	.button{
 		fill: white;
 		stroke: black;
-	
-	}	
+
+	}
 
 </style>
 <script src="lib/d3.min.js"></script>
@@ -49,8 +49,8 @@
 	var buttonarea = 200;
 	var margin = {
 		top: 20,
-		right: 20, 
-		bottom: 30, 
+		right: 20,
+		bottom: 30,
 		left:40
 		},
 			width = 1300 - margin.left - margin.right,
@@ -68,7 +68,7 @@
 
 	var bx = d3.scale.ordinal()
 		.rangeRoundBands([0, width], .1);
-	
+
 	var xAxis = d3.svg.axis()
 								.scale(x)
 								.orient("bottom");
@@ -83,7 +83,7 @@
 							.attr("height", height + margin.top + margin.bottom + buttonarea)
 						.append("g")
 						.attr("transform", "translate(" + margin.left + "," + margin.top + ")");
-	
+
 	var tooltip = d3.select("body").append("div")
 		.attr("class", "tooltip")
 		.style("opacity", 0);
@@ -95,9 +95,9 @@
 
 			var colname = d3.map(data[0]).keys();
 			colname.shift();
-			
+
 			vername = currentname;
-		
+
 			x.domain(data.map(function(d) {return d.tag}));
 			y.domain([0, d3.max(data, function(d) {return d[vername];})]);
 
@@ -142,8 +142,13 @@
 						.duration(200)
 						.style("opacity", .9);
 					tooltip.html(d[vername] + "円/人")
-						.style("left", (d3.event.pageX + 5) + "px")
-						.style("top", (d3.event.pageY - 30) + "px");
+						//.style("left", (d3.event.pageX + 5) + "px")
+						//.style("top", (d3.event.pageY - 30) + "px")
+						.style("background-color","yellow")
+				})
+				.on("mousemove",function(d){
+					return d3.select(".tooltip").style("top", (event.pageY - 30) + "px")
+        		.style("left", (event.pageX + 5) + "px");
 				})
 				.on("mousemove", function(d){
 					tooltip.style("top", (d3.event.pageY - 30) + "px")
@@ -221,7 +226,7 @@
 		vername = newname;
 		d3.csv("data.csv", type, function(err, data){
 			if (err) { console.log(err) }
-			
+
 			var maxv = d3.max(data, function(d) {return d[vername];});
       y.domain([0, maxv]);
 			yAxis.scale(y);
@@ -255,7 +260,7 @@
         .attr("x", function(d) { return x(d.tag);})
         .attr("width", x.rangeBand())
         .attr("y", function(d) { console.log(d[vername]); return y(d[vername]);})
-        .attr("height", function(d) {return height - y(d[vername]);})		
+        .attr("height", function(d) {return height - y(d[vername]);})
 				.attr("fill", function(d){
 					var colval = Math.ceil(d[vername]*255/maxv);
 					colval = 350 - colval;
@@ -266,7 +271,7 @@
 	}
 
 
-	
+
 	function update(){
 		var w = window.innerWidth - margin.left - margin.right;
 		console.log(w);
@@ -275,14 +280,14 @@
 			.scale(x);
 
 		svg.attr("width", w);
-		
+
 		svg.select(".x.axis")
 			.call(xAxis);
 
 
 		var data = d3.csv("data.csv", type, function(err, data){ return data; });
-	
-		/*	
+
+		/*
 		svg.selectAll(".bar")
 			.data(data).enter()
 			.attr("x", function(d) { return x(d.tag); })
@@ -322,7 +327,7 @@
 					return d3.descending(a[vername], b[vername]);
 				}
 			});
-		
+
 		svg.selectAll(".bar")
 			.transition()
 		 	.delay(function(d, i){
@@ -334,7 +339,7 @@
 			});
 	}
 */
-	
+
 
 
 </script>
