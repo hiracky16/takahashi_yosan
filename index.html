@@ -30,8 +30,8 @@
 
 	.tooltip{
 		position: absolute;
-		width: 200px;
-		height: 30px;
+		width: 160px;
+		height: 40px;
 		pointer-events: none;
 	}
 
@@ -141,7 +141,7 @@
 					tooltip.transition()
 						.duration(200)
 						.style("opacity", .9);
-					tooltip.html(d[vername] + "円/人")
+					tooltip.html(d.tag + "(" + vername + ")" + "<br>" + d[vername] + "円/人")
 						//.style("left", (d3.event.pageX + 5) + "px")
 						//.style("top", (d3.event.pageY - 30) + "px")
 						.style("background-color","yellow")
